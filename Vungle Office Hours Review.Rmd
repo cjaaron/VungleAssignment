@@ -1,0 +1,86 @@
+---
+title: "Vungle Office Hour Notes"
+author: "CA"
+date: "10/2/2017"
+output: html_document
+---
+
+COMPARING STATS FROM VUNGLE A AND VUNGLE B USING DDPLY
+
+```{r}
+ddply(Vungle_Spreadsheet, .(Strategy), summarize, meanImpressions = mean(Impressions))
+```
+
+
+This gives me a table with the Vungles as the rows, Vungle A and Vungle B, and then the means of the impressions for each Vungle. I would use ddply instead of breaking up the data by Vungle and then independently calculating means, for example. 
+
+BREAKING DOWN THE CODE:
+
+ddply(Dataframe that I want to use, .(the variable I want to be the rows), summarize, the name of new column =  what I want(from the column I want))
+
+PRACTICE Q1: make a table with rows based on Vungle by week (ex, Vungle A, week 1), and show me the mean effective revenue and standard deviation of revenue. 
+
+My overall strategy to do this is a few steps.
+1. Make a new column called weeks. In here, by defining week 1, 2, 3... I can break up the data by week. 
+  - note: Before I could do this, I needed to change the type of the data of the dates from "double", which it was initially in, to "character", and then into a date format. By making a new column for dates, "Date_2", I was able to turn all dates from "double" to "character" and then to date. This allowed me to categorize them into different weeks, as once they were in the date format, R knew how to order them.
+
+```{r}
+Week = "0"
+
+Vungle_Spreadsheet$Date_2 = as.Date(as.character(Vungle_Spreadsheet$Date))
+```
+ 
+  - To ensure R changed the format of my data, I can use the "head" command to see the first 6 lines of data. I used "head(Vungle_Spreadsheet$Date_2 + 2" to check to see if R would show me all the dates two days ahead, indicating that in was indeed reading the data as a date. ... it was able to do this. 
+  
+```{r}
+head(Vungle_Spreadsheet$Date_2 + 2)
+```
+
+2. Now that I have the dates in the correct format, via Vungle_Spreadsheet$Date_2, I can categorize the data by date. I looked up the month of June, 2014 to ensure I was acutally using the correct week numbers. 
+  -In words, within the dataframe "Vungle_Spreadsheet", I am using data from the "Date_2" column to make categories which I then define as Week 1, Week 2, etc. I add $Week at the end of the code to indicate that I want that group of data with it's assigned category to be put into the column "Week".
+
+```{r}
+Vungle_Spreadsheet[Vungle_Spreadsheet$Date_2 >= as.Date("2014-06-01") & Vungle_Spreadsheet$Date_2 < as.Date("2014-06-06"),]$Week = "Week 1"
+
+Vungle_Spreadsheet[Vungle_Spreadsheet$Date_2 >= as.Date("2014-06-06") & Vungle_Spreadsheet$Date_2 < as.Date("2014-06-13"),]$Week = "Week 2"
+
+Vungle_Spreadsheet[Vungle_Spreadsheet$Date_2 >= as.Date("2014-06-13") & Vungle_Spreadsheet$Date_2 < as.Date("2014-06-20"),]$Week = "Week 3"
+
+Vungle_Spreadsheet[Vungle_Spreadsheet$Date_2 >= as.Date("2014-06-20") & Vungle_Spreadsheet$Date_2 < as.Date("2014-06-27"),]$Week = "Week 4"
+
+Vungle_Spreadsheet[Vungle_Spreadsheet$Date_2 >= as.Date("2014-06-27") & Vungle_Spreadsheet$Date_2 < as.Date("2014-06-30"),]$Week = "Week 5"
+```
+
+3. Lastly, I need to use ddply to make a table with Vungle by weeks as my rows and mean revenue and standard deviation of the revenue as my columns. For example, one row would be "Vungle A, Week 1". After I make the table using ddply, I can save that table as a dataframe to use to make graphs later. 
+
+```{r}
+ddply(Vungle_Spreadsheet, .(Strategy, Week), summarize, mean_rev = mean(eRPM), sd_rev = sd(eRPM))
+```
+
+4. I need to save this table as a new dataframe. Simply come up with a new name and set it equal to the code that made the table -- this automatically makes a new dataframe. 
+
+```{r}
+Vungle_by_Week = ddply(Vungle_Spreadsheet, .(Strategy, Week), summarize, mean_rev = mean(eRPM), sd_rev = sd(eRPM))
+```
+
+PRACTICE Q2: use the new datafram "Vungle_by_Week" to create a lineplot showing the mean revenues per week from Vungle A against the mean revenues per week from Vungle B.
+
+1. Before we can start, I need to change the type of variable for the column Week from "character" to "factor". I do this because the Week number will eventually be the X Variable of my graph, and R can't read characters as the variables for a lineplot. 
+
+```{r}
+Vungle_by_Week$Week = as.factor(Vungle_by_Week$Week)
+```
+
+2. First, I want to plot Vungle A, with the mean revenue on the y-axis and week on the x-axis. 
+
+```{r}
+plot(y = Vungle_by_Week[Vungle_by_Week$Strategy == "Vungle A",]$mean_rev, x = as.numeric(Vungle_by_Week[Vungle_by_Week$Strategy == "Vungle A",]$Week), type = "l", main = "Average Revenue Per Week", xlab = Week, ylab = "Average Revenue", col = "darkolivegreen1")
+```
+
+3. To add another line ontop of this one in the same graph, I simply have to use the lines function. In this function, I define the new y value and new x value, but only need to change the color if I want to. The labels will otherwise stay the same. 
+
+```{r}
+plot(y = Vungle_by_Week[Vungle_by_Week$Strategy == "Vungle A",]$mean_rev, x = as.numeric(Vungle_by_Week[Vungle_by_Week$Strategy == "Vungle A",]$Week), type = "l", main = "Average Revenue Per Week", xlab = "Week", ylab = "Average Revenue", col = "darkolivegreen1", ylim = c(2.8, 4))
+lines(y = Vungle_by_Week[Vungle_by_Week$Strategy == "Vungle B",]$mean_rev, x = as.numeric(Vungle_by_Week[Vungle_by_Week$Strategy == "Vungle B",]$Week), col = "darkmagenta")
+```
+
