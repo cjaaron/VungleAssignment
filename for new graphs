@@ -1,0 +1,34 @@
+Vungle_Spreadsheet$Week = "0"
+Vungle_Spreadsheet$Date_2 = as.Date(as.character(Vungle_Spreadsheet$Date))
+Vungle_Spreadsheet[Vungle_Spreadsheet$Date_2 >= as.Date("2014-06-01") 
+                   & Vungle_Spreadsheet$Date_2 < as.Date("2014-06-06"),
+                   ]$Week = "Week 1"
+Vungle_Spreadsheet[Vungle_Spreadsheet$Date_2 >= as.Date("2014-06-06") 
+                   & Vungle_Spreadsheet$Date_2 < as.Date("2014-06-13"),
+                   ]$Week = "Week 2"
+Vungle_Spreadsheet[Vungle_Spreadsheet$Date_2 >= as.Date("2014-06-13") 
+                   & Vungle_Spreadsheet$Date_2 < as.Date("2014-06-20"),
+                   ]$Week = "Week 3"
+Vungle_Spreadsheet[Vungle_Spreadsheet$Date_2 >= as.Date("2014-06-20") 
+                   & Vungle_Spreadsheet$Date_2 < as.Date("2014-06-27"),
+                   ]$Week = "Week 4"
+Vungle_Spreadsheet[Vungle_Spreadsheet$Date_2 >= as.Date("2014-06-27") 
+                   & Vungle_Spreadsheet$Date_2 <= as.Date("2014-06-30"),
+                   ]$Week = "Week 5"
+                   
+                   
+library(plyr)
+ddply(Vungle_Spreadsheet, .(Strategy, Week), summarize, mean_rev = mean(eRPM), sd_rev = sd(eRPM), mean_completion = mean(Completion_Rate), mean_clickthrough = mean(Clickthrough_Rate), mean_conversion = mean(Conversion_Rate))
+Vungle_by_Week = ddply(Vungle_Spreadsheet, .(Strategy, Week), summarize, mean_rev = mean(eRPM), sd_rev = sd(eRPM))
+Vungle_by_Week$Week = as.factor(Vungle_by_Week$Week)
+plot(y = Vungle_by_Week[Vungle_by_Week$Strategy == "Vungle A",]$mean_rev, 
+     x = as.numeric(Vungle_by_Week[Vungle_by_Week$Strategy == "Vungle A",]$Week), 
+     type = "l", 
+     main = "Average Revenue Per Week", 
+     xlab = "Week", 
+     ylab = "Average Revenue", 
+     col = "red", 
+     ylim = c(2.8, 4))
+lines(y = Vungle_by_Week[Vungle_by_Week$Strategy == "Vungle B",]$mean_rev, 
+      x = as.numeric(Vungle_by_Week[Vungle_by_Week$Strategy == "Vungle B",]$Week), 
+      col = "blue")                 
