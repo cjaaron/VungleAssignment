@@ -12,7 +12,21 @@ mean of x mean of y
    3.3471    3.4590 
    
    
-   
+   > t.test(Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$eRPM, Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$eRPM, pared = SAME)
+
+	Welch Two Sample t-test
+
+data:  Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",  and Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",     ]$eRPM and     ]$eRPM
+t = -1.5064, df = 48.832, p-value = 0.1384
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -0.2611866  0.0373866
+sample estimates:
+mean of x mean of y 
+   3.3471    3.4590 
+
+
+... why are these the same even though in the second one I used paired?
    
    COOPER, DO YOU UNDERSTAND WHAT THIS MEANS? I CAN SEE THAT THE 0 FALLS IN THE 95% CONFIDENCE INTERVAL, SO DOES THAT MEAN
    THAT THE NULL IS TRUE AND THERE IS NO DIFFERENCE BETWEEN THE MEANS? 
