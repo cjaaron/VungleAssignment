@@ -1,0 +1,233 @@
+---
+title: "Vungle Assingment"
+author: "CA"
+date: "10/4/2017"
+output: pdf_document
+---
+
+GitHub Link: https://github.com/cjaaron/VungleAssignment 
+
+Vungle's Data Problem and Goal
+
+Vungle is an "in-app video advertising company." What this means is that Vungle provides a platform for companies to advertise their applications via videos to users while they are using other applications. The aim is to get users of application X to download additional application Y in response to an advertisement they saw for Y while using X. Vungle profits depending on the "ad-serving efficiency," or how often application users engange in various ways with the video advertisements they see. While Vungle has lots of data on the users of various applications, as well as the users applications being advertised, Vungle's current code to match advertisements with the people most likely to engage with them is outdated. Two MBA graduates developed a new program using "historical information about users, publishers, and install rates to determine which ad campaign to serve in order to increase the chance of a conversion and, more specifically, eRPM [effective revenue per 1000 impressions]." Vungle now has to determine for how long it wants to test the new algorithm and what will indicate whether or not it is performing better than the existing algorithm. Ultimately, they want to use the most efficiant algorithm to increase engagement with the video advertisments and consequently increase revenue for both Vungle and the publisher of the advertisement. 
+
+Dataset Variables
+
+```{r}
+library(readxl)
+Vungle_Spreadsheet <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/2017 Fall/Business Analytics/Assignment 1/Vungle Spreadsheet.xlsx")
+summary(Vungle_Spreadsheet)
+```
+
+There exist seven variables in the Vungle_Spreadsheet dataset: strategy, date, impressions, completes, clicks, installs, and eRPM. Strategy simply identifies whether the datapoint was collected from the A test condition or B test condition (nominal measure type, as it is a form of ID). The date variable, an interval measure type, pairs each day's measurement with a date so the data collected from test condition A and B can be compared in a specific interval. The four variables indicating engagement with the advertisements - impressions, completes, clicks and installs - are all ratio measurement types, as is eRPM, or effective revenue per 1000 impressions. 
+
+While the data does contain key variables, most importantly the user engagement variables and the date variable which allow management to track progress over time, the data is lacking in terms of variables that actually translate this data to revenue, or monitization data. As is, the dataset only privdes information about effective revenue per 1000 impressions; however, depending on how engaged any given user is with the advertisment, revenue will vary. This is relevant, as perhaps a change in eRPM is not because more/less people are being accurately targeted, but because the new algorithm does a better job targeting the small group most likely to complete an instillation. To understand the ways in which the new algorthim is actually impacting the company, not just final revenue, it would be important to anaylize data on the fill rate, completion rate, click-through rate, and conversion rate. These variables can be added to the dataset easity by creating new columns that calculate these rates using the existing user engagement variables. Further, "requests" should be added as a variable to the data set, as it is necessary to calculate fill rate, (impressions/requests).
+
+```{r}
+Vungle_Spreadsheet$Completion_Rate = Vungle_Spreadsheet$Completes / Vungle_Spreadsheet$Impressions
+Vungle_Spreadsheet$Clickthrough_Rate = Vungle_Spreadsheet$Clicks / Vungle_Spreadsheet$Impressions
+Vungle_Spreadsheet$Conversion_Rate = Vungle_Spreadsheet$Installs / Vungle_Spreadsheet$Impressions
+```
+
+In addition to adding variables for the various rates of engagement, it will also be necessary to have a varaible, "week," that categorizes the data by week. Because the managers are looking to determine for how long to run the experimental algorithem, they will need to be able to examine change in the revenue and engagement variables over time, and by week is the most relevant time denotation for this case. 
+
+```{r}
+Vungle_Spreadsheet$Week = "0"
+Vungle_Spreadsheet$Date_2 = as.Date(as.character(Vungle_Spreadsheet$Date))
+Vungle_Spreadsheet[Vungle_Spreadsheet$Date_2 >= as.Date("2014-06-01") 
+                   & Vungle_Spreadsheet$Date_2 < as.Date("2014-06-06"),
+                   ]$Week = "Week 1"
+Vungle_Spreadsheet[Vungle_Spreadsheet$Date_2 >= as.Date("2014-06-06") 
+                   & Vungle_Spreadsheet$Date_2 < as.Date("2014-06-13"),
+                   ]$Week = "Week 2"
+Vungle_Spreadsheet[Vungle_Spreadsheet$Date_2 >= as.Date("2014-06-13") 
+                   & Vungle_Spreadsheet$Date_2 < as.Date("2014-06-20"),
+                   ]$Week = "Week 3"
+Vungle_Spreadsheet[Vungle_Spreadsheet$Date_2 >= as.Date("2014-06-20") 
+                   & Vungle_Spreadsheet$Date_2 < as.Date("2014-06-27"),
+                   ]$Week = "Week 4"
+Vungle_Spreadsheet[Vungle_Spreadsheet$Date_2 >= as.Date("2014-06-27") 
+                   & Vungle_Spreadsheet$Date_2 <= as.Date("2014-06-30"),
+                   ]$Week = "Week 5"
+```
+
+Summary Statistics 
+
+Revenue should be examined first, as it provides an overall idea of how the algorithms relate and their "success" rate, with "success" defined as revenue. To unerstand revenue in terms of its change over time, it is most helpful to examine it by Vungle (A v. B) and by week. Note: it is easiest to make a table and new data frame to run this analysis. 
+
+```{r}
+library(plyr)
+ddply(Vungle_Spreadsheet, .(Strategy, Week), summarize, mean_rev = mean(eRPM), sd_rev = sd(eRPM), mean_completion = mean(Completion_Rate), mean_clickthrough = mean(Clickthrough_Rate), mean_conversion = mean(Conversion_Rate))
+Vungle_by_Week = ddply(Vungle_Spreadsheet, .(Strategy, Week), summarize, mean_rev = mean(eRPM), sd_rev = sd(eRPM))
+Vungle_by_Week$Week = as.factor(Vungle_by_Week$Week)
+plot(y = Vungle_by_Week[Vungle_by_Week$Strategy == "Vungle A",]$mean_rev, 
+     x = as.numeric(Vungle_by_Week[Vungle_by_Week$Strategy == "Vungle A",]$Week), 
+     type = "l", 
+     main = "Average Revenue Per Week", 
+     xlab = "Week", 
+     ylab = "Average Revenue", 
+     col = "red", 
+     ylim = c(2.8, 4))
+lines(y = Vungle_by_Week[Vungle_by_Week$Strategy == "Vungle B",]$mean_rev, 
+      x = as.numeric(Vungle_by_Week[Vungle_by_Week$Strategy == "Vungle B",]$Week), 
+      col = "blue")
+```
+
+Based on the graph comparing revenues earned over the course of a month, it is clear Vungle B, the blue line, began surpassing the performance of Vungle A algorithm during the first week. Following week one, the rate of growth of Vungle B declined, but remained consistantly higher than Vungle A. To ensure the graph is representative of the data, we test the same information again by simply looking at effective revenue change across the month. It shows the same information. 
+
+```{r}
+plot(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$eRPM, 
+     x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Date,
+     type = "l",
+     main = "Revenue Over Month",
+     xlab = "Day",
+     ylab = "Revenue",
+     col = "red",
+     ylim = c(2.0, 5.0))
+lines(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$eRPM,
+      x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Date,
+      col = "blue")
+```
+
+Based on this graph comparing revenue of both Vungle A and B over the couse of the month of collected data, it is clear Vungle B generates more revenue than Vungle B. 
+
+To understand why Vungle B is generating more revenue, we ran summary statistics via plots comparing Vungle A and Vungle B on key variables such as completion rate, clickthrough rate, and conversion rate. 
+
+```{r}
+plot(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Completion_Rate, 
+     x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Date,
+     type = "l",
+     main = "Rate Change Over Month",
+     xlab = "Day",
+     ylab = "Rate",
+     col = "red4",
+     ylim = c(0.0, 1.0))
+lines(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Completion_Rate,
+      x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Date,
+      col = "red")
+lines(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Clickthrough_Rate,
+      x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Date,
+      col = "olivedrab")
+lines(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Clickthrough_Rate,
+      x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Date,
+      col = "olivedrab1")
+lines(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Conversion_Rate,
+      x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Date,
+      col = "midnightblue")
+lines(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Conversion_Rate,
+      x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Conversion_Rate,
+      col = "lightskyblue")
+```
+
+This initial plot looking at all the rate changes over the month show there exists no visable difference between any rate for Vungle A and B. Because of the scale of this graph, we run closer plots for each individual rate to see them up close. 
+
+```{r}
+plot(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Completion_Rate, 
+     x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Date,
+     type = "l",
+     main = "Completion Rate Change Over Month",
+     xlab = "Day",
+     ylab = "Rate",
+     col = "red4",
+     ylim = c(0.87, 0.9))
+lines(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Completion_Rate,
+      x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Date,
+      col = "red")
+```
+
+In this plot, we can see that Vungle A outperforms Vungle B in completion rate. 
+
+```{r}
+plot(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Clickthrough_Rate, 
+     x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Date,
+     type = "l",
+     main = "Clickthrough Rate Change Over Month",
+     xlab = "Day",
+     ylab = "Rate",
+     col = "olivedrab",
+     ylim = c(0.045, 0.056))
+lines(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Clickthrough_Rate,
+      x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Date,
+      col = "olivedrab1")
+```
+
+In this plot, we can see that Vungle A outperforms Vungle B in clickthrough rate. 
+
+```{r}
+plot(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Conversion_Rate, 
+     x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Date,
+     type = "l",
+     main = "Conversion Rate Change Over Month",
+     xlab = "Day",
+     ylab = "Rate",
+     col = "midnightblue",
+     ylim = c(0.003, 0.005))
+lines(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Conversion_Rate,
+      x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Date,
+      col = "lightskyblue")
+```
+
+In this plot, we can see that Vungle A outperforms Vungle B in conversion rate. 
+
+Based on the last three plots, we were hoping to discover what was driving the increased Vungle B revenue that we saw in the initial comparison of eRPM, or revenue, between Vungle A and B. Yet, based on the indepth analysis, we discovered, Vungle B doesn't perform better in any of the engagement variables forcing us to question whether or not there exist other variables aside from the engagement variable that might drive revenue. 
+
+```{r}
+plot(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Completion_Rate, 
+     x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Date,
+     type = "l",
+     main = "Change in Engagment",
+     xlab = "Day",
+     ylab = "Times",
+     col = "red4",
+     ylim = c(0.0, 1.0))
+lines(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Completion_Rate,
+      x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Date,
+      col = "red")
+lines(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Clickthrough_Rate,
+      x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Date,
+      col = "olivedrab")
+lines(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Clickthrough_Rate,
+      x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Date,
+      col = "olivedrab1")
+lines(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Conversion_Rate,
+      x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Date,
+      col = "midnightblue")
+lines(y = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Conversion_Rate,
+      x = Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Conversion_Rate,
+      col = "lightskyblue")
+```
+
+To test for ad effectiveness, based on the graphs above, we believe it will be most important for the company to examine the engagement variables, as a change in revenue can be the result of the sample selection rather than the change in the algorithim. 
+
+To see whether or not the fact that Vungle B is outperforming A in revenue is due to change, we will run a paired samples t-Test. 
+
+```{r}
+t.test(Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$eRPM, Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$eRPM)
+
+```
+
+The p-value is greater than our alpha at 95% confidence (p > .05). Just as we suspected, we fail to reject the null hypothesis that there is no difference in revenue between Vungle A and Vungle B, meaning, the difference we see over the course of the first month is due to chance. While there is a very small chance (less than 5%) that there is a significant difference between the revenue of A and B, the alternative hypothesis, we suggest managment look at the engagement variables, as we will do below, to examine ad effectiveness. 
+
+First, we will check to see if there is a significant difference in the completion rate between Vungle A and Vungle B. Our null hypothesis is that there is no difference between the two completion rates, and our alternative hypothesis is that there is a significant difference between the completion rates of the two algorithims. 
+
+```{r}
+t.test(Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Completion_Rate, Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Completion_Rate)
+```
+
+With 99% confidence, we can reject the null and say that there is a significant difference between the completion rate of Vungle A and Vungle B (p < .01). Using this information to examine our earlier plot, we can say that Vungle A outperforming Vungle B is not by chance. 
+
+We will now test the significance of the clickthrough rate. 
+
+```{r}
+t.test(Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Clickthrough_Rate, Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Clickthrough_Rate)
+```
+
+```{r}
+t.test(Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle A",]$Conversion_Rate, Vungle_Spreadsheet[Vungle_Spreadsheet$Strategy == "Vungle B",]$Conversion_Rate)
+```
+
+
+Because the strenght of the difference is the biggest for conversion, and then clickthrough, and lstly completion, we think that this indicates which is the most important for determing the difference between algorithm a and b. 
+
+** look at t values to see size of difference
+** look at p to tell us how confident we are in the difference
